@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.git
+recordings
+snapshots
+data
+*.log
+IMOU_MOTION_RECORDER_SRS.md
