@@ -5,16 +5,24 @@ One service watches two cameras for ONVIF motion events. Each motion start captu
 ## Configuration
 
 - `.1.env` holds the existing Debian recorder settings. `compose.debian.yaml` uses the published recorder image and this file. The running Debian deployment is independent of this branch.
-- `.2.env` holds both countryside cameras and the Telegram destination. `compose.yaml` uses this file to build the snapshot service on Ubuntu.
+- `.2.env` holds both countryside cameras and the Telegram destination. `compose.yaml` uses this file with the versioned snapshot image on Ubuntu.
 
 Copy `.env.example` to `.2.env` if you do not have the local settings already. Fill `CAMERA_1_*` for the kitchen camera and `CAMERA_2_*` for the yard camera. `CAMERA_*_PASSWORD` is the ONVIF password; the password embedded in `CAMERA_*_RTSP_URL` may be different. The two cameras share `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. Set a distinct `CAMERA_*_NAME` so notifications identify the camera.
 
 All real `.env` files are ignored by Git and excluded from Docker build context.
 
-## Build and run on Ubuntu
+## Build and publish the image
 
 ```bash
-docker compose up -d --build
+docker build --platform linux/amd64 -t lesitoan/imou-snapshot:1.0.0 .
+docker push lesitoan/imou-snapshot:1.0.0
+```
+
+## Run on Ubuntu
+
+```bash
+docker compose pull
+docker compose up -d
 docker compose logs -f imou-snapshot-que
 ```
 

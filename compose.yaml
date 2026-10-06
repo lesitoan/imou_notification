@@ -1,7 +1,6 @@
 services:
   imou-snapshot-que:
-    build: .
-    image: imou-snapshot-que:local
+    image: lesitoan/imou-snapshot:1.0.0
     container_name: imou-snapshot-que
     restart: unless-stopped
     init: true
