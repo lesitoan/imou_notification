@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+.1.env
+.2.env
 recordings/
 snapshots/
 data/

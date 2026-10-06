@@ -1,85 +1,49 @@
 import { CameraEvents } from "./camera.js";
-import { runCleanup } from "./cleanup.js";
-import { config } from "./config.js";
+import { config, type CameraConfig } from "./config.js";
 import { log, logError } from "./logger.js";
-import { Recorder } from "./recorder.js";
+import { captureSnapshot } from "./snapshot.js";
 import { sendMotionNotification } from "./telegram.js";
 
-type State = "IDLE" | "RECORDING" | "WAITING_STOP";
-
-const recorder = new Recorder();
-let state: State = "IDLE";
-let lastMotion: boolean | null = null;
-let stopTimer: NodeJS.Timeout | null = null;
 let shuttingDown = false;
+const activeNotifications = new Set<Promise<void>>();
 
-async function startEvent(): Promise<void> {
+async function notify(camera: CameraConfig): Promise<void> {
   try {
-    await recorder.start();
-    state = "RECORDING";
+    const image = await captureSnapshot(camera);
+    await sendMotionNotification(camera.name, image);
+    log(`${camera.name}: snapshot sent to Telegram`);
   } catch (error) {
-    state = "IDLE";
-    logError("Could not start recording", error);
-    return;
+    logError(`${camera.name}: snapshot notification failed`, error);
   }
-
-  let snapshotPath: string | undefined;
-  try {
-    snapshotPath = await recorder.snapshot();
-  } catch (error) {
-    logError("Snapshot failed", error);
-  }
-  void sendMotionNotification(snapshotPath);
 }
 
-function scheduleStop(): void {
-  if (stopTimer) clearTimeout(stopTimer);
-  state = "WAITING_STOP";
-  stopTimer = setTimeout(() => {
-    stopTimer = null;
-    void recorder.stop().finally(() => {
-      state = "IDLE";
-      lastMotion = false;
+function watchCamera(settings: CameraConfig): CameraEvents {
+  let lastMotion: boolean | null = null;
+  let notificationInProgress = false;
+
+  return new CameraEvents(settings, (motion) => {
+    if (shuttingDown || motion === lastMotion) return;
+    lastMotion = motion;
+    log(`${settings.name}: ${motion ? "MOTION START" : "MOTION END"}`);
+    if (!motion || notificationInProgress) return;
+
+    notificationInProgress = true;
+    const task = notify(settings).finally(() => {
+      notificationInProgress = false;
+      activeNotifications.delete(task);
     });
-  }, config.recording.postDelaySeconds * 1000);
-  log(`Recording stop scheduled in ${config.recording.postDelaySeconds}s`);
+    activeNotifications.add(task);
+  });
 }
 
-function onMotionChanged(motion: boolean): void {
-  if (motion === lastMotion) return;
-  lastMotion = motion;
-  log(motion ? "MOTION START" : "MOTION END");
-
-  if (motion && state === "IDLE") {
-    void startEvent();
-    return;
-  }
-  if (!motion && state === "RECORDING") {
-    scheduleStop();
-    return;
-  }
-  if (motion && state === "WAITING_STOP") {
-    if (stopTimer) clearTimeout(stopTimer);
-    stopTimer = null;
-    state = "RECORDING";
-    log("Motion resumed; pending stop cancelled");
-  }
-}
-
-const camera = new CameraEvents(onMotionChanged);
-const cleanupInterval = setInterval(
-  () => void runCleanup(recorder.activePath),
-  config.retention.cleanupIntervalMinutes * 60 * 1000,
-);
+const cameras = config.cameras.map(watchCamera);
 
 async function shutdown(signal: string): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
   log(`${signal} received; shutting down`);
-  if (stopTimer) clearTimeout(stopTimer);
-  clearInterval(cleanupInterval);
-  camera.stop();
-  await recorder.stop();
+  for (const camera of cameras) camera.stop();
+  await Promise.allSettled([...activeNotifications]);
   process.exit(0);
 }
 
@@ -88,6 +52,5 @@ process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("uncaughtException", (error) => logError("Uncaught exception", error));
 process.on("unhandledRejection", (error) => logError("Unhandled rejection", error));
 
-log("Imou Motion Recorder starting");
-camera.start();
-void runCleanup(recorder.activePath);
+log("Imou Motion Snapshot starting");
+for (const camera of cameras) camera.start();

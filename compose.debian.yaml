@@ -1,0 +1,14 @@
+services:
+  imou-recorder:
+    image: lesitoan/imou-recorder:latest
+    container_name: imou-recorder
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .1.env
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      RECORDING_PATH: /data/recordings
+      SNAPSHOT_PATH: /data/snapshots
+    volumes:
+      - ./data:/data

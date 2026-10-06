@@ -1,8 +1,8 @@
 {
-  "name": "imou-motion-recorder",
+  "name": "imou-motion-snapshot",
   "version": "1.0.0",
   "private": true,
-  "description": "Low-resource ONVIF motion recorder for Imou cameras",
+  "description": "Two-camera ONVIF motion snapshots with Telegram notifications",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",

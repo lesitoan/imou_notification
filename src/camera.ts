@@ -1,5 +1,5 @@
 import { Cam } from "onvif";
-import { config } from "./config.js";
+import { config, type CameraConfig } from "./config.js";
 import { log, logError } from "./logger.js";
 
 type MotionHandler = (motion: boolean) => void;
@@ -39,7 +39,10 @@ export class CameraEvents {
   private reconnectTimer: NodeJS.Timeout | null = null;
   private stopped = false;
 
-  constructor(private readonly onMotion: MotionHandler) {}
+  constructor(
+    private readonly settings: CameraConfig,
+    private readonly onMotion: MotionHandler,
+  ) {}
 
   start(): void {
     this.stopped = false;
@@ -56,14 +59,14 @@ export class CameraEvents {
 
   private connect(): void {
     if (this.stopped) return;
-    log(`Connecting to camera ${config.camera.host}:${config.camera.port}`);
+    log(`${this.settings.name}: connecting to ${this.settings.host}:${this.settings.port}`);
 
     const cam = new Cam(
       {
-        hostname: config.camera.host,
-        port: config.camera.port,
-        username: config.camera.username,
-        password: config.camera.password,
+        hostname: this.settings.host,
+        port: this.settings.port,
+        username: this.settings.username,
+        password: this.settings.password,
         timeout: 10_000,
         preserveAddress: true,
         // Imou A32EP-L returns malformed GetProfiles XML. Only initialize
@@ -74,27 +77,29 @@ export class CameraEvents {
     );
 
     cam.getSystemDateAndTime((timeError?: Error) => {
+      if (this.stopped) return;
       if (timeError) {
-        logError("Camera time query failed", timeError);
+        logError(`${this.settings.name}: camera time query failed`, timeError);
         this.scheduleReconnect();
         return;
       }
 
       cam.getCapabilities((error?: Error) => {
+        if (this.stopped) return;
         if (error) {
-          logError("Camera connection failed", error);
+          logError(`${this.settings.name}: camera connection failed`, error);
           this.scheduleReconnect();
           return;
         }
 
         this.camera = cam;
-        log("Camera connected; waiting for ONVIF events");
+        log(`${this.settings.name}: connected; waiting for ONVIF events`);
         cam.on("event", (message: unknown) => {
           const motion = findMotionValue(message);
           if (motion !== null) this.onMotion(motion);
         });
         cam.on("error", (eventError: unknown) => {
-          logError("Camera event connection error", eventError);
+          logError(`${this.settings.name}: camera event connection error`, eventError);
           cam.removeAllListeners();
           if (this.camera === cam) this.camera = null;
           this.scheduleReconnect();
@@ -105,8 +110,8 @@ export class CameraEvents {
 
   private scheduleReconnect(): void {
     if (this.stopped || this.reconnectTimer) return;
-    const delayMs = config.camera.reconnectSeconds * 1000;
-    log(`Camera reconnect scheduled in ${config.camera.reconnectSeconds}s`);
+    const delayMs = config.reconnectSeconds * 1000;
+    log(`${this.settings.name}: reconnect scheduled in ${config.reconnectSeconds}s`);
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.connect();

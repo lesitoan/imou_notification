@@ -1,14 +1,12 @@
 services:
-  imou-recorder:
-    image: lesitoan/imou-recorder:latest
-    container_name: imou-recorder
+  imou-snapshot-que:
+    build: .
+    image: imou-snapshot-que:local
+    container_name: imou-snapshot-que
     restart: unless-stopped
     init: true
+    stop_grace_period: 45s
     env_file:
-      - .env
+      - .2.env
     environment:
       TZ: Asia/Ho_Chi_Minh
-      RECORDING_PATH: /data/recordings
-      SNAPSHOT_PATH: /data/snapshots
-    volumes:
-      - ./data:/data

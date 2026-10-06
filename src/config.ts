@@ -1,5 +1,4 @@
 import "dotenv/config";
-import path from "node:path";
 
 function required(name: string): string {
   const value = process.env[name]?.trim();
@@ -17,27 +16,45 @@ function positiveNumber(name: string, fallback: number): number {
   return value;
 }
 
+export type CameraConfig = {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  rtspUrl: string;
+  name: string;
+};
+
+function cameraConfig(number: 1 | 2): CameraConfig {
+  const prefix = `CAMERA_${number}_`;
+  const host = required(`${prefix}HOST`);
+  const rtspUrl = required(`${prefix}RTSP_URL`);
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(rtspUrl);
+  } catch {
+    throw new Error(`${prefix}RTSP_URL must be a valid RTSP URL`);
+  }
+  if (parsedUrl.protocol !== "rtsp:" || parsedUrl.hostname !== host) {
+    throw new Error(`${prefix}RTSP_URL must use rtsp:// and match ${prefix}HOST`);
+  }
+
+  return {
+    host,
+    port: positiveNumber(`${prefix}PORT`, 80),
+    username: required(`${prefix}USERNAME`),
+    password: required(`${prefix}PASSWORD`),
+    rtspUrl,
+    name: required(`${prefix}NAME`),
+  };
+}
+
 export const config = {
-  camera: {
-    host: process.env.CAMERA_HOST?.trim() || "192.168.1.2",
-    port: positiveNumber("CAMERA_PORT", 80),
-    username: required("CAMERA_USERNAME"),
-    password: required("CAMERA_PASSWORD"),
-    rtspUrl: required("CAMERA_RTSP_URL"),
-    name: process.env.CAMERA_NAME?.trim() || "Phòng",
-    reconnectSeconds: positiveNumber("CAMERA_RECONNECT_SECONDS", 10),
-  },
-  recording: {
-    path: path.resolve(process.env.RECORDING_PATH?.trim() || "./recordings"),
-    snapshotPath: path.resolve(process.env.SNAPSHOT_PATH?.trim() || "./snapshots"),
-    postDelaySeconds: positiveNumber("RECORDING_POST_DELAY_SECONDS", 10),
-  },
-  retention: {
-    days: positiveNumber("RETENTION_DAYS", 3),
-    cleanupIntervalMinutes: positiveNumber("CLEANUP_INTERVAL_MINUTES", 60),
-  },
+  cameras: [cameraConfig(1), cameraConfig(2)],
+  reconnectSeconds: positiveNumber("CAMERA_RECONNECT_SECONDS", 10),
+  snapshotTimeoutSeconds: positiveNumber("SNAPSHOT_TIMEOUT_SECONDS", 20),
   telegram: {
-    token: process.env.TELEGRAM_BOT_TOKEN?.trim() || "",
-    chatId: process.env.TELEGRAM_CHAT_ID?.trim() || "",
+    token: required("TELEGRAM_BOT_TOKEN"),
+    chatId: required("TELEGRAM_CHAT_ID"),
   },
 } as const;

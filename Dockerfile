@@ -15,9 +15,7 @@ ENV NODE_ENV=production
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-RUN mkdir -p /data/recordings /data/snapshots \
-  && chown -R node:node /app /data
+RUN chown -R node:node /app
 USER node
-VOLUME ["/data"]
 STOPSIGNAL SIGTERM
 CMD ["node", "dist/index.js"]
