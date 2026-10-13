@@ -1,4 +1,17 @@
-# Bàn giao mới nhất — Debian đã triển khai 2.0.1
+# Bàn giao mới nhất — cả Debian và quê đã triển khai 2.0.1
+
+Cập nhật **13/10/2026, khoảng 17:10 Asia/Ho_Chi_Minh**. Ubuntu ở quê đã được triển khai theo yêu cầu mới nhất; Debian giữ nguyên kết quả ở phần dưới.
+
+- Quê: **100.79.114.23**, thư mục **/home/toandev/imou-snapshot-que**, service/container **imou-snapshot-que**. Compose dùng `.2.env`, image **lesitoan/imou-notifi:2.0.1** pin digest **sha256:f18a8d65b7ef7f57bf4036c29114ae7cfdd231d22741357500a787b27b37e7f9**.
+- Hai camera **Bếp 192.168.1.3**, **Sân 192.168.1.4**: ảnh `motion_start`, video `fixed` **15s**, Telegram ảnh/video bật; local video/snapshot và Drive đều tắt. Nhóm **camera_1 -5568762006**, bot đã xác nhận là member bằng API đọc.
+- Cấu hình migrate từ env hiệu lực container cũ để giữ credentials và nhóm. `.2.env` local đã đồng bộ từ server, không commit secrets.
+- Module ONVIF `/app/dist/camera.js` của bản cũ và mới cùng SHA256 **c9c274a5d90958665a01c9557748596a32fa3abea9d06bda841bdf50a32ce706**. Không đổi cách bắt event ở quê.
+- Cutover lúc **17:07:28**: app 2.0.1 khởi động, cả hai camera connected; nhận MOTION END từ cả hai. Container running/restart count0; RAM khoảng15.54MiB khi idle. Server có2.8GiB RAM khả dụng và40GiB đĩa trống lúc khảo sát.
+- Video chỉ giữ tạm trong data volume cho queue, xóa khi delivery kết thúc; ảnh không archive. Không có file media/job ở thời điểm kiểm tra sau deploy. Queue tối đa20jobs/500MiB, cách gửi video5s, pending tối đa24h; ảnh được ưu tiên theo logic chung đã thống nhất.
+- **Người dùng yêu cầu bỏ qua kiểm tra chuyển động vì đang ở xa. Chưa xác nhận ảnh/video thực tế và cleanup sau upload trên hai camera quê; không ghi live verification là PASS.** Có thể kiểm tra khi có sự kiện thật; chưa cần sửa source hoặc build lại.
+- Backup quê **/home/toandev/imou-snapshot-que/rollback-20261013-100506**: Compose/env cũ, runtime.env private, image-id và rollback.compose.yaml. Image cũ được tag **lesitoan/imou-snapshot:rollback-pre-unified**. Rollback khi cần: `docker compose -p imou-snapshot-que -f /home/toandev/imou-snapshot-que/rollback-20261013-100506/rollback.compose.yaml up -d`. Không chạy hai bản đồng thời.
+
+## Kết quả Debian trước đó
 
 Cập nhật **13/10/2026, 16:56 Asia/Ho_Chi_Minh**. Người dùng đã yêu cầu tiếp tục. Đọc phần này trước; các phần dưới là lịch sử tạm dừng và bản2.0.0, không phải trạng thái hiện tại.
 
@@ -34,11 +47,11 @@ crontab /home/toandev/imou-recorder/rollback-20261013-161005/crontab-before-cuto
 
 Không chạy app cũ/new đồng thời cùng camera. Nếu khôi phục cron cũ, bảo đảm worker Drive mới dừng để không backup trùng. File rclone config trong secrets ownerUID1000/mode600, thư mục700; có quyền ghi để refresh OAuth.
 
-## Còn lại cho lượt triển khai ở quê
+## Trạng thái quê sau triển khai
 
-**Chưa thay server Ubuntu ở quê**, vẫn deployment snapshot cũ. `.2.env` local đã chuẩn bị hai camera .1.3/.1.4, group quê -5568762006, fixed15s, Telegram video true, local archive/Drive false, queue durable trên data volume, tag2.0.1.
+**Đã thay server Ubuntu ở quê sang2.0.1**, xem phần mới nhất đầu file. `.2.env` local/server đã đồng bộ profile hai camera .1.3/.1.4, group quê -5568762006, fixed15s, Telegram video true, local archive/Drive false và queue durable trên data volume.
 
-Khi người dùng yêu cầu triển khai quê: kiểm tra cấu hình/quyền data/disk/camera thật, backup image/env/Compose cũ; deploy cùng2.0.1/digest; xác nhận ảnh giữ thuật toán, hai clip fixed/overlap, gửi video queue và cleanup temporary. Không tự đổi policy ảnh hoặc bật video Telegram Debian.
+Người dùng đã yêu cầu bỏ qua live motion verification. Khi có yêu cầu kiểm tra tiếp: quan sát hai clip fixed/overlap, gửi ảnh/video và cleanup temporary bằng sự kiện thật. Không tự đổi policy ảnh hoặc bật video Telegram Debian.
 
 Các giới hạn: ảnh bypass queue; có thể retry video trùng nếu mất phản hồi; quota Telegram không được phối hợp giữa hai server; pending Drive giữ tối đa72h Debian. Archive/Drive backlog không thuộc budget queue Telegram500MiB, reserve đĩa256MiB. Drive retention không xóa bản remote. HTTP TPS limiter giảm tốc quá trình phục hồi file cũ; file mới được ưu tiên sau job hiện hành.
 

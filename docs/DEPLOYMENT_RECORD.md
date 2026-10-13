@@ -65,3 +65,15 @@ Production video from the first live event was successfully backed up at16:55:51
 A motion END16:55:32 followed by START16:55:35 resumed the active session inside the10s stop delay; no additional photo was emitted, matching the preserved Debian policy. Deployment succeeded. Remaining legacy backups continue in the durable worker; no follow-up automation was created.
 
 Countryside Ubuntu is unchanged. The next user-authorized deployment can use the same2.0.1 image with .2.env.
+
+## Countryside cutover — 13/10/2026, 17:07
+
+Deployed Ubuntu **100.79.114.23** at `/home/toandev/imou-snapshot-que`, retaining service/container/project `imou-snapshot-que`. Image `lesitoan/imou-notifi:2.0.1` is pinned to digest `sha256:f18a8d65b7ef7f57bf4036c29114ae7cfdd231d22741357500a787b27b37e7f9`.
+
+Effective old container env was backed up and migrated; camera credentials and Telegram countryside group were preserved. New `.2.env` was downloaded to the local workspace without displaying or committing secrets. Backup `/home/toandev/imou-snapshot-que/rollback-20261013-100506` contains old Compose/env, effective runtime.env, image-id, and absolute rollback Compose. Old image tag: `lesitoan/imou-snapshot:rollback-pre-unified`.
+
+Profile: Bếp `192.168.1.3`, Sân `192.168.1.4`; photo `motion_start`, video fixed15s; Telegram photos/videos enabled; local video/snapshot archive disabled; Drive disabled including both destinations. Bot read-only membership check confirmed `imou_notifi_bot` is a member of group `camera_1` (`-5568762006`). The old and new compiled ONVIF camera modules have identical SHA256 `c9c274a5d90958665a01c9557748596a32fa3abea9d06bda841bdf50a32ce706`.
+
+Startup at17:07:28 connected both cameras and received MOTION END from both. Container running, restart count0; idle memory15.54MiB at inspection. Host had2.8GiB available RAM and40GiB free disk. New data directory had no media/job files after startup. Videos will use temporary durable queue storage and be deleted after terminal delivery; there is no local archive. Queue20jobs/500MiB, send interval5s, pending max24h. Photos keep their existing direct delivery priority.
+
+**Live motion/photo/video delivery verification was skipped at the user's explicit request because they are away. Actual 15s video delivery and post-upload cleanup on the countryside cameras are not yet verified.** Deployment/configuration and ONVIF connectivity are confirmed. No Debian changes or source/image rebuild were performed in this countryside deployment.
