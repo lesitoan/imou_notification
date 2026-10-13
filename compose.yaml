@@ -6,7 +6,7 @@ services:
     init: true
     stop_grace_period: 60s
     env_file:
-      - ${APP_ENV_FILE:-.2.env}
+      - ${APP_ENV_FILE:-.env}
     environment:
       TZ: Asia/Ho_Chi_Minh
       DATA_PATH: /data
