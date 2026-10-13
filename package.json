@@ -1,6 +1,6 @@
 {
   "name": "imou-notifi",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "description": "Configurable camera snapshots, recording, Telegram video queue and Drive backup",
   "main": "dist/index.js",

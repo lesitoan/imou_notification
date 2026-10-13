@@ -1,6 +1,6 @@
 services:
   imou-notifi:
-    image: ${APP_IMAGE:-lesitoan/imou-notifi:2.0.0}
+    image: ${APP_IMAGE:-lesitoan/imou-notifi:2.0.1}
     container_name: ${APP_CONTAINER_NAME:-imou-notifi}
     restart: unless-stopped
     init: true

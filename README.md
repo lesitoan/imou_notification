@@ -1,4 +1,4 @@
-# Imou Notifi 2.0.0
+# Imou Notifi 2.0.1
 
 Một source và một Docker image cho Debian và Ubuntu ở quê. Mỗi camera nhận ONVIF START/END riêng, chụp ảnh qua RTSP và có thể quay video, gửi Telegram, lưu local hoặc backup Google Drive theo env.
 
@@ -54,8 +54,8 @@ Khi migrate Debian, sao lưu Compose/env/crontab/image, tạo `.1.env` bằng `p
 npm ci
 npm run typecheck
 npm test
-docker build --platform linux/amd64 -t lesitoan/imou-notifi:2.0.0 .
-docker push lesitoan/imou-notifi:2.0.0
+docker build --platform linux/amd64 -t lesitoan/imou-notifi:2.0.1 .
+docker push lesitoan/imou-notifi:2.0.1
 ```
 
 Kiểm tra dùng camera/token giả, không gửi thông báo thật. Mọi env thật, data và secrets được loại khỏi Git và build context. Chi tiết quyết định tại `docs/UNIFIED_SOURCE_PLAN.md`.

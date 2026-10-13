@@ -7,6 +7,18 @@ import { loadConfig } from '../dist/config.js';
 import { MediaStore } from '../dist/storage.js';
 import { prepareVideo } from '../dist/video.js';
 import { runProcess } from '../dist/process.js';
+import { recordingArgs } from '../dist/recorder.js';
+
+test('Recorder uses the timeout supported by the installed RTSP demuxer', { skip: process.env.RUN_MEDIA_TESTS !== 'true' }, async () => {
+  const help = await runProcess('ffmpeg', ['-hide_banner', '-h', 'demuxer=rtsp'], 15000);
+  const args = recordingArgs({videoMode:'fixed',durationSeconds:15,rtspUrl:'rtsp://192.0.2.1/stream'}, '/tmp/test.mp4.part');
+  assert.ok(args.includes('-timeout')); assert.ok(!args.includes('-rw_timeout'));
+  assert.match(help, /-timeout\s+<int64>/);
+  assert.equal(args[args.indexOf('-timeout')+1], '15000000');
+  assert.equal(args[args.indexOf('-t')+1], '15');
+  const motion = recordingArgs({videoMode:'motion',maxDurationSeconds:300,rtspUrl:'rtsp://192.0.2.1/stream'}, '/tmp/test.mp4.part');
+  assert.equal(motion[motion.indexOf('-t')+1], '300');
+});
 
 test('FFmpeg real media conversion keeps archive and creates bounded H264 MP4', { skip: process.env.RUN_MEDIA_TESTS !== 'true' }, async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'imou-media-'));

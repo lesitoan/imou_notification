@@ -1,6 +1,6 @@
 services:
   imou-recorder:
-    image: ${APP_IMAGE:-lesitoan/imou-notifi:2.0.0}
+    image: ${APP_IMAGE:-lesitoan/imou-notifi:2.0.1}
     container_name: imou-recorder
     restart: unless-stopped
     init: true

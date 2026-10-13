@@ -4,6 +4,12 @@ import type { CameraConfig } from "./config.js";
 import { MediaStore } from "./storage.js";
 import { log, logError } from "./logger.js";
 
+export function recordingArgs(camera: CameraConfig, partial: string): string[] {
+  const duration = camera.videoMode === "fixed" ? camera.durationSeconds : camera.maxDurationSeconds;
+  return ["-hide_banner", "-loglevel", "warning", "-rtsp_transport", "tcp", "-timeout", "15000000",
+    "-i", camera.rtspUrl, "-map", "0:v:0", "-c:v", "copy", "-an", "-t", String(duration), "-movflags", "+faststart", "-f", "mp4", partial];
+}
+
 export class Recorder {
   private child: ChildProcess | null = null;
   private finished: Promise<void> = Promise.resolve();
@@ -12,8 +18,7 @@ export class Recorder {
     if (this.child) throw new Error("Recording already active");
     const output = await this.store.allocate(this.camera, "video", startedAt), partial = `${output}.part`;
     const duration = this.camera.videoMode === "fixed" ? this.camera.durationSeconds : this.camera.maxDurationSeconds;
-    const child = spawn("ffmpeg", ["-hide_banner", "-loglevel", "warning", "-rtsp_transport", "tcp", "-rw_timeout", "15000000",
-      "-i", this.camera.rtspUrl, "-map", "0:v:0", "-c:v", "copy", "-an", "-t", String(duration), "-movflags", "+faststart", "-f", "mp4", partial], { stdio: ["pipe", "ignore", "pipe"] });
+    const child = spawn("ffmpeg", recordingArgs(this.camera, partial), { stdio: ["pipe", "ignore", "pipe"] });
     this.child = child; this.store.activePaths.add(partial);
     let stderr = "", forceTimer: NodeJS.Timeout | undefined;
     const watchdog = setTimeout(() => child.kill("SIGKILL"), (duration + 45) * 1000);

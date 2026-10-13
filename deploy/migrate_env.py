@@ -34,7 +34,7 @@ values.update(VIDEO_ENABLED="true", TELEGRAM_PHOTO_ENABLED="true", VIDEO_SEND_IN
               VIDEO_QUEUE_MAX_BYTES="524288000", VIDEO_PENDING_MAX_AGE_HOURS="72" if args.site == "debian" else "24",
               PROTECT_PENDING_DELIVERIES="true", TELEGRAM_VIDEO_MAX_SECONDS="60", MIN_FREE_DISK_BYTES="268435456",
               DATA_PATH="/data", RECORDING_PATH="/data/recordings", SNAPSHOT_PATH="/data/snapshots", APP_DATA_DIR="./data",
-              APP_SECRETS_DIR="./secrets", APP_ENV_FILE=Path(args.destination).name, APP_IMAGE="lesitoan/imou-notifi:2.0.0")
+              APP_SECRETS_DIR="./secrets", APP_ENV_FILE=Path(args.destination).name, APP_IMAGE="lesitoan/imou-notifi:2.0.1")
 output = Path(args.destination)
 output.write_text("# Unified Imou Notifi profile: " + args.site + "\n" + "\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
 output.chmod(0o600)

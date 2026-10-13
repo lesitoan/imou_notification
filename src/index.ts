@@ -76,7 +76,7 @@ async function main(): Promise<void> {
     process.exit(0);
   };
   process.on("SIGTERM", () => void shutdown("SIGTERM")); process.on("SIGINT", () => void shutdown("SIGINT"));
-  log(`Imou Notifi 2.0.0 starting: site=${config.siteId}, cameras=${cameras.length}`);
+  log(`Imou Notifi 2.0.1 starting: site=${config.siteId}, cameras=${cameras.length}`);
   workers.start(); for (const camera of cameras) camera.start();
 }
 process.on("unhandledRejection", error => { logError("Unhandled rejection", error); process.exitCode = 1; });
