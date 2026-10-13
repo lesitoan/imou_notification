@@ -1,3 +1,133 @@
+# Bàn giao mới nhất — Debian đã triển khai 2.0.1
+
+Cập nhật **13/10/2026, 16:56 Asia/Ho_Chi_Minh**. Người dùng đã yêu cầu tiếp tục. Đọc phần này trước; các phần dưới là lịch sử tạm dừng và bản2.0.0, không phải trạng thái hiện tại.
+
+## Đã hoàn thành
+
+- Source chung trên branch **codex/unify-camera-service**. Commit implementation8da580d; patch recorder **fad9e78**, tag local **v2.0.1**. Chưa push Git branch/tag lên remote; đã push Docker Hub theo yêu cầu.
+- Sửa FFmpeg recorder từ `-rw_timeout` sang **`-timeout 15000000`**, đối chiếu help RTSP demuxer trong image.
+- Final image Linux **12/12 test PASS**, gồm regression tham số RTSP và chuyển MPEG4→H264/giới hạn thời lượng/queue/retention/retry.
+- Image **lesitoan/imou-notifi:2.0.1**, digest **sha256:f18a8d65b7ef7f57bf4036c29114ae7cfdd231d22741357500a787b27b37e7f9** đã push/pull và deploy Debian. Bản2.0.0 có lỗi recorder, không dùng deploy.
+- Real camera diagnostic trong final published image PASS: fixed3.000s, snapshot và motion stop6.648s. Script không gửi Telegram/Drive, dùng data /tmp trong container --rm.
+- Debian **100.71.168.118**, container/service **imou-recorder**, `/home/toandev/imou-recorder/compose.yaml`, env **.1.env**, image pin tag+digest nêu trên. Data cũ vẫn mount /data; secrets riêng /run/secrets.
+- Camera Phòng **192.168.1.10**; migrate từ env hiệu lực container cũ, vì .env gốc trên disk stale .1.2. `.1.env` local đã đồng bộ camera .1.10/group mới.
+- Profile Debian: PHOTO_TRIGGER=recording_start; motion END chờ10s, max đoạn300s; ảnh nhóm **camera_DN -5405309944**; Telegram video **false**; video/snapshot local **true**, retention3days; Drive **true**, remote gdrive:ASUS_Server_Backup/Imou_Recorder.
+- Đã gỡ **chỉ cron Imou backup cũ**, dừng script/transfer Imou tương ứng, để worker mới thực hiện backup. Các cron/container khác giữ nguyên.
+- Worker Drive đã backup nhiều ảnh/video legacy thành công. Backlog ban đầu846records được phục hồi; file cũ chỉ dọn sau giao xong, pending được bảo vệ.
+- Có quota per-minute khi legacy backlog chạy nhanh. Đã chỉnh env **RCLONE_TPSLIMIT=0.5**, **RCLONE_TPSLIMIT_BURST=1**, restart nhận env; rclone log xác nhận limiter, các lượt backup sau đó thành công. Cấu hình này có trong .1.env, .2.env, .env.example và script migrate (defaults), README.
+- Restart kiểm tra phục hồi826records, không phát lại Telegram; container running/restart count0, khoảng49MiB RAM tại lúc khảo sát.
+- Người dùng xác nhận đi qua camera Phòng. Log production có START16:51:40, snapshot sent Telegram16:51:45; END16:52:10, video completed16:52:20, đúng post-delay10s. LượtSTART mới16:52:27 gửi ảnh16:52:33. Không thay đổi giải mã/thuật toán ONVIF.
+- Clip đầu1971910bytes, ffprobe xác nhận **HEVC2304×1296,39.539s**. Bản lưu không âm thanh; nếu bật Telegram video sẽ tạo H264 khi cần, archive giữ nguyên.
+- Snapshot mới đã backup Drive lúc16:53:51; video mới đã backup thành công lúc16:55:51. Metadata của hai job mới là drive=sent, attempts0; xem kết quả cuối tại docs/DEPLOYMENT_RECORD.md.
+
+## Backup và rollback
+
+Backup **/home/toandev/imou-recorder/rollback-20261013-161005** chứa Compose/env gốc, runtime.env hiệu lực, image-id.txt, crontab.txt, crontab-before-cutover.txt và rollback.compose.yaml. Image tag **lesitoan/imou-recorder:rollback-pre-unified**.
+
+Rollback phải dùng **runtime.env**, không dùng .env stale. Lệnh rollback khi cần:
+
+```sh
+cd /home/toandev/imou-recorder
+docker compose -p imou-recorder -f /home/toandev/imou-recorder/rollback-20261013-161005/rollback.compose.yaml up -d
+crontab /home/toandev/imou-recorder/rollback-20261013-161005/crontab-before-cutover.txt
+```
+
+Không chạy app cũ/new đồng thời cùng camera. Nếu khôi phục cron cũ, bảo đảm worker Drive mới dừng để không backup trùng. File rclone config trong secrets ownerUID1000/mode600, thư mục700; có quyền ghi để refresh OAuth.
+
+## Còn lại cho lượt triển khai ở quê
+
+**Chưa thay server Ubuntu ở quê**, vẫn deployment snapshot cũ. `.2.env` local đã chuẩn bị hai camera .1.3/.1.4, group quê -5568762006, fixed15s, Telegram video true, local archive/Drive false, queue durable trên data volume, tag2.0.1.
+
+Khi người dùng yêu cầu triển khai quê: kiểm tra cấu hình/quyền data/disk/camera thật, backup image/env/Compose cũ; deploy cùng2.0.1/digest; xác nhận ảnh giữ thuật toán, hai clip fixed/overlap, gửi video queue và cleanup temporary. Không tự đổi policy ảnh hoặc bật video Telegram Debian.
+
+Các giới hạn: ảnh bypass queue; có thể retry video trùng nếu mất phản hồi; quota Telegram không được phối hợp giữa hai server; pending Drive giữ tối đa72h Debian. Archive/Drive backlog không thuộc budget queue Telegram500MiB, reserve đĩa256MiB. Drive retention không xóa bản remote. HTTP TPS limiter giảm tốc quá trình phục hồi file cũ; file mới được ưu tiên sau job hiện hành.
+
+Xem **docs/DEPLOYMENT_RECORD.md** để biết kết quả cuối và digest. Review và deployment docs được cập nhật sau tag release; source app image vẫn tương ứngfad9e78.
+
+---
+
+# Lịch sử các lượt trước
+
+# Trạng thái bàn giao mới nhất — ĐÃ TẠM DỪNG
+
+Cập nhật: **13/10/2026, khoảng 16:18 (Asia/Ho_Chi_Minh)**. Người dùng yêu cầu tạm dừng và cập nhật review; không tiếp tục sửa/build/deploy trong lượt này.
+
+**Đọc phần này trước. Các phần bên dưới là lịch sử bàn giao lúc 16:04, có trạng thái đã thay đổi.**
+
+## Đã hoàn thành sau khi tiếp tục
+
+1. Đọc review và kiểm tra working tree; giữ branch **codex/unify-camera-service**.
+2. Sửa source:
+   - Cleanup giữ busy lock trên mỗi job trong toàn bộ thao tác để worker không tranh file.
+   - Snapshot archive ghi `.part` rồi rename; cleanup partial snapshot; lỗi archive không chặn gửi JPEG đã chụp.
+   - Upload video H264 phù hợp vẫn có thể gửi khi đĩa thấp; chỉ chuyển mã yêu cầu đủ disk reserve + ngân sách file gửi.
+   - Bắt lỗi stdin của recorder để tránh lỗi pipe làm app crash.
+3. `npm test` source cuối: 10/10 PASS. Thêm `tests/media.test.mjs`; chạy final image Linux với RUN_MEDIA_TESTS=true: **11/11 PASS**, gồm chuyển MPEG4 sang H264, giới hạn thời lượng, giữ archive và phục hồi preparedFile.
+4. Commit implementation: **8da580d** — `Unify camera service with configurable recording and durable delivery workers`.
+5. Git tag local **v2.0.0** trỏ tới commit này. Chưa push Git branch/tag lên remote.
+6. Build và push thành công **lesitoan/imou-notifi:2.0.0**:
+   - Manifest digest **sha256:f65e9ff3eddb0e048600e8b66c4392f4426beaae733d4d379c0e43144f59e0b1**.
+   - Image ID **sha256:b5e8c759fe4876aef1c43162a272befab1473bbc88a8695b04d6a8b5f2ae85c1**.
+   - Debian đã pull cùng digest.
+7. SSH Debian qua Tailscale thành công.
+8. Backup tại **/home/toandev/imou-recorder/rollback-20261013-161005**: Compose gốc, .env gốc, crontab, image-id.txt và runtime.env hiệu lực. Image cũ tag **lesitoan/imou-recorder:rollback-pre-unified**.
+9. Phát hiện **.env trên đĩa stale (.1.2)** nhưng container đang chạy **camera .1.10/Phòng**. Đã trích chỉ các key ứng dụng từ docker inspect vào runtime.env private, rồi migrate sang `.1.env` server. Không dùng .env stale để deploy hoặc rollback.
+10. Đã tạo rollback.compose.yaml trong backup folder: pin image rollback, env runtime.env và data path tuyệt đối. `.rollback-path` trong thư mục deployment trỏ backup folder.
+11. Đã chép `migrate_env.py`, `compose.debian.yaml`, `camera-diagnostic.mjs` vào `/home/toandev/imou-recorder`.
+12. Đã tạo **secrets/rclone.conf** từ config host, file600/thư mục700, owner toandev UID1000. `rclone listremotes` thấy gdrive:.
+13. Telegram read-only: bot imou_notifi_bot là member nhóm **camera_DN -5405309944**; token hiệu lực của container đọc được nhóm.
+14. Đã tải `.1.env` server về `.1.env` local: host hiện **192.168.1.10**, tên Phòng, group mới, profile motion/local3days/Drive. Secrets không được commit.
+15. Tạo `docs/DEPLOYMENT_RECORD.md` ghi commit/tag/digest và bước chuẩn bị; file này chưa commit tại lúc dừng.
+
+## Lỗi quan trọng vừa phát hiện — CHƯA SỬA
+
+**Chẩn đoán recorder với camera thật trong image 2.0.0 FAILED:**
+
+```text
+Phòng: recording started (fixed, limit 3s)
+Phòng: recording failed: FFmpeg video exited 1: Option rw_timeout not found.
+Diagnostic exit: 1
+```
+
+Log server: `/home/toandev/imou-recorder/camera-diagnostic.log`.
+
+Lỗi nằm ở tham số **`-rw_timeout 15000000` trong src/recorder.ts**, xảy ra với FFmpeg/RTSP thực tế trong image. Kiểm tra trước đó tới localhost port đóng chỉ trả Connection refused và không chứng minh option hợp lệ khi RTSP kết nối thành công.
+
+**11/11 test vẫn PASS vì suite không kiểm tra Recorder với RTSP thật. Không xem bản 2.0.0 đã push là sẵn sàng deploy.** Cần kiểm tra help của RTSP demuxer trong đúng image, sửa tham số timeout theo version FFmpeg, thêm kiểm tra recorder thực tế rồi rebuild/push bản sửa. Không âm thầm ghi đè release hiện có; chọn version patch phù hợp (ví dụ 2.0.1) và đồng bộ package/Compose/env/docs/tag sau khi sửa.
+
+Chẩn đoán thất bại ngay ở fixed3s; **chưa chạy qua snapshot và motion stop**. Không có ảnh/video nào được script này gửi Telegram hay Drive. Container diagnostic dùng --rm và data tạm trong /tmp, không đụng archive production.
+
+## Trạng thái server tại lúc tạm dừng
+
+- **CHƯA CUTOVER.** Container `imou-recorder` vẫn chạy image cũ **lesitoan/imou-recorder:latest**.
+- Compose production `/home/toandev/imou-recorder/compose.yaml` **chưa thay**.
+- Env production `.env` **chưa thay**; `.1.env` mới được chuẩn bị riêng.
+- Cron backup Imou cũ **chưa gỡ/dừng**. Chưa dừng process backup đang chạy.
+- New worker Drive **chưa chạy/kiểm tra backup thành công**. Backup cũ đã thấy rateLimitExceeded/duplicate object trước đó.
+- New image đã pull nhưng chỉ được chạy bằng script diagnostic, chưa chạy app production.
+- Không thay đổi deployment Ubuntu ở quê.
+- .2.env local đã chuẩn bị video15s nhưng APP_IMAGE vẫn2.0.0, cần đổi sang bản sửa đã kiểm tra trước triển khai.
+- Source implementation đã commit 8da580d; review hiện tại được sửa sau commit; deployment record untracked. Không reset mất tài liệu.
+
+## Việc phải làm tiếp khi người dùng yêu cầu tiếp tục
+
+1. Đọc trạng thái mới nhất này; xác nhận server vẫn chạy bản cũ.
+2. Kiểm tra FFmpeg RTSP demuxer help trong image để sửa rw_timeout, không đoán tham số từ bản FFmpeg khác.
+3. Chạy camera-diagnostic.mjs thành công cả fixed3s, snapshot và motion stop; bổ sung kiểm tra Recorder để bắt lỗi tương tự.
+4. Review lại source và suite; giữ thuật toán ảnh đã chốt.
+5. Tạo bản patch đã sửa, commit/tag/build/push và lưu digest mới; đồng bộ `.1.env`, `.2.env`, Compose, README, deployment record. Tag v2.0.0 local và image2.0.0 hiện phản ánh bản có lỗi recorder; không dùng để cutover.
+6. Dùng `.1.env` hiệu lực đã migrate (.1.10), validate quyền data/secrets và rclone trong final image. `.env` gốc stale không dùng làm căn cứ camera.
+7. Backup/rollback hiện đã có. Nếu thay trạng thái trước cutover thì bổ sung backup runtime/crontab mới.
+8. Cutover Debian trước: giữ tên container/data, dừng app cũ graceful, thay Compose, tạm gỡ đúng cron Imou và kết thúc/wait process backup cũ để không tranh quota; giữ các cron/container khác.
+9. Xác nhận ONVIF, ảnh nhóm mới, recording hoàn tất/MP4 playable, retention và Drive backed up. Chưa có xác nhận gửi thật tới nhóm mới trong app mới.
+10. Restart/queue/rollback kiểm tra theo checklist lịch sử; báo người dùng kết quả Debian. Quê chưa deploy trong lượt này.
+
+Không cần xin lại quyền cho các bước triển khai người dùng đã cho phép khi họ yêu cầu tiếp tục. Hiện tại phải giữ tạm dừng theo yêu cầu mới nhất.
+
+---
+
+# Lịch sử bàn giao trước khi tiếp tục (16:04)
+
 # Bàn giao Imou Notifi — source chung, Docker và triển khai Debian
 
 Cập nhật: **13/10/2026, 16:04 (Asia/Ho_Chi_Minh)**.

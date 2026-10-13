@@ -59,3 +59,7 @@ docker push lesitoan/imou-notifi:2.0.1
 ```
 
 Kiểm tra dùng camera/token giả, không gửi thông báo thật. Mọi env thật, data và secrets được loại khỏi Git và build context. Chi tiết quyết định tại `docs/UNIFIED_SOURCE_PLAN.md`.
+
+### Giới hạn truy vấn Drive khi có backlog
+
+Có thể thêm `RCLONE_TPSLIMIT=0.5` và `RCLONE_TPSLIMIT_BURST=1` vào env site. Rclone kế thừa hai biến này từ ứng dụng và giới hạn tối đa một giao dịch HTTP mỗi 2 giây, burst một giao dịch. Debian đang áp dụng để tránh dồn truy vấn khi phục hồi archive cũ. Đổi env cần `docker compose --env-file .1.env up -d` để container nhận cấu hình mới. Các worker vẫn ưu tiên file mới và retry khi Drive trả quota error. Tham khảo [rclone TPS limit](https://rclone.org/docs/#tpslimit-float) và [rclone environment variables](https://rclone.org/docs/#environment-variables).

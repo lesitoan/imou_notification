@@ -30,6 +30,8 @@ else:
                    VIDEO_DURATION_SECONDS="15", TELEGRAM_VIDEO_ENABLED="true", LOCAL_VIDEO_ENABLED="false", LOCAL_SNAPSHOT_ENABLED="false",
                    DRIVE_UPLOAD_ENABLED="false", APP_CONTAINER_NAME="imou-snapshot-que")
 values.update(profile)
+values.setdefault("RCLONE_TPSLIMIT", "0.5")
+values.setdefault("RCLONE_TPSLIMIT_BURST", "1")
 values.update(VIDEO_ENABLED="true", TELEGRAM_PHOTO_ENABLED="true", VIDEO_SEND_INTERVAL_SECONDS="5", VIDEO_QUEUE_MAX_SIZE="20",
               VIDEO_QUEUE_MAX_BYTES="524288000", VIDEO_PENDING_MAX_AGE_HOURS="72" if args.site == "debian" else "24",
               PROTECT_PENDING_DELIVERIES="true", TELEGRAM_VIDEO_MAX_SECONDS="60", MIN_FREE_DISK_BYTES="268435456",
