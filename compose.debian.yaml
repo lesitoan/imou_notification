@@ -1,14 +1,17 @@
 services:
   imou-recorder:
-    image: lesitoan/imou-recorder:latest
+    image: ${APP_IMAGE:-lesitoan/imou-notifi:2.0.0}
     container_name: imou-recorder
     restart: unless-stopped
     init: true
+    stop_grace_period: 60s
     env_file:
       - .1.env
     environment:
       TZ: Asia/Ho_Chi_Minh
+      DATA_PATH: /data
       RECORDING_PATH: /data/recordings
       SNAPSHOT_PATH: /data/snapshots
     volumes:
       - ./data:/data
+      - ./secrets:/run/secrets

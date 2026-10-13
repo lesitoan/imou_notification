@@ -9,9 +9,14 @@ function formatError(value: unknown): string {
 }
 
 export function log(message: string): void {
-  console.log(`[${new Date().toISOString()}] ${message}`);
+  console.log(`[${new Date().toISOString()}] ${redact(message)}`);
 }
 
 export function logError(context: string, error: unknown): void {
-  console.error(`[${new Date().toISOString()}] ${context}: ${formatError(error)}`);
+  console.error(`[${new Date().toISOString()}] ${context}: ${redact(formatError(error))}`);
+}
+
+export function redact(message: string): string {
+  return message.replace(/rtsp:\/\/[^\s@]+@/gi, "rtsp://[credentials]@")
+    .replace(/bot\d+:[A-Za-z0-9_-]+/g, "bot[redacted]");
 }

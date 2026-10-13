@@ -6,5 +6,6 @@ dist/
 recordings/
 snapshots/
 data/
+secrets/
 *.log
 *.part

@@ -1,11 +1,16 @@
 node_modules
 dist
 .env
+.env.*
 .1.env
 .2.env
 .git
 recordings
 snapshots
 data
+secrets
+tests
+docs
+deploy
 *.log
 IMOU_MOTION_RECORDER_SRS.md

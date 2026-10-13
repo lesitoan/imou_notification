@@ -1,14 +1,15 @@
 {
-  "name": "imou-motion-snapshot",
-  "version": "1.0.0",
+  "name": "imou-notifi",
+  "version": "2.0.0",
   "private": true,
-  "description": "Two-camera ONVIF motion snapshots with Telegram notifications",
+  "description": "Configurable camera snapshots, recording, Telegram video queue and Drive backup",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --import ./tests/environment.mjs --test tests/*.test.mjs"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
